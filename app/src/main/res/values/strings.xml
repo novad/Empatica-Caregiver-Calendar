@@ -16,4 +16,5 @@
     <string name="add">Add</string>
     <string name="nocaregiver">No caregiver selected</string>
     <string name="month">Month</string>
+    <string name="update_appointment">Update</string>
 </resources>
