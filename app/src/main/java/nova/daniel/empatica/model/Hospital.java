@@ -49,7 +49,7 @@ public class Hospital {
 
     /**
      * Initialize each HourSlot model for each hour of the day
-     * @param appointments
+     * @param appointments List of appointments
      */
     public void initializeSlots(List<Appointment> appointments) {
         mHourSlotModelList = new ArrayList<>();

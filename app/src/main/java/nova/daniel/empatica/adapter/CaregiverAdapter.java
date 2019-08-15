@@ -125,7 +125,7 @@ public class CaregiverAdapter extends RecyclerView.Adapter<CaregiverAdapter.View
         @Override
         public void onClick(View v) {
             if(caregiverSelectedListener != null){
-                caregiverSelectedListener.onItemClick(caregiversList.get(mPosition), mPosition);
+                caregiverSelectedListener.onCaregiverClick(caregiversList.get(mPosition), mPosition);
             }
         }
     }
@@ -134,6 +134,6 @@ public class CaregiverAdapter extends RecyclerView.Adapter<CaregiverAdapter.View
      * Interface that responds to clicking events for each caregivers row.
      */
     public interface onItemClickListener {
-        void onItemClick(Caregiver caregiver, int position);
+        void onCaregiverClick(Caregiver caregiver, int position);
     }
 }
