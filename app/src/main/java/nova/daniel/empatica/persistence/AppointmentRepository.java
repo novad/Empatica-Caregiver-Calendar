@@ -6,16 +6,18 @@ import android.os.AsyncTask;
 
 import androidx.lifecycle.LiveData;
 
-import org.json.JSONObject;
-
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
 import nova.daniel.empatica.model.Appointment;
-import nova.daniel.empatica.model.Caregiver;
+import nova.daniel.empatica.persistence.dao.AppointmentDAO;
 
+/**
+ * Deals with local persistence calls for {@link Appointment} objects.
+ */
 public class AppointmentRepository {
+
     private Context mContext;
     private AppointmentDAO mAppointmentDAO;
     private LiveData<List<Appointment>> mAppointments;
@@ -25,15 +27,21 @@ public class AppointmentRepository {
         AppDatabase db = AppDatabase.getInMemoryDatabase(application);
         mAppointmentDAO = db.appointmentDAO();
     }
+
     public LiveData<List<Appointment>> getAllAppointments(){
         mAppointments = mAppointmentDAO.getAll();
         return mAppointments;
     }
 
+    public LiveData<List<Appointment>> getAppointmentsById(int[] ids) {
+        mAppointments = mAppointmentDAO.getAllAllByIds(ids);
+        return mAppointments;
+    }
+
     /**
-     * Gets all appointments for a given day (between 0:00 - 23:59)
-     * @param date
-     * @return
+     * Gets all appointments for a given day (between 0:00 - 23:59).
+     * @param date Date of appointments to fetch.
+     * @return List of appointments for the given date.
      */
     public LiveData<List<Appointment>> getAppointmentsForDate(Date date) {
         Calendar cal = Calendar.getInstance();
@@ -54,13 +62,22 @@ public class AppointmentRepository {
         new AppointmentRepository.insertAsyncTask(mAppointmentDAO).execute(appointment);
     }
 
-    public interface APICallbackListener{
-        public void resultCallback(JSONObject response);
-        public void resultError();
+    public void update(Appointment appointment) {
+        new AppointmentRepository.updateAsyncTask(mAppointmentDAO).execute(appointment);
     }
 
-    private static class insertAsyncTask extends AsyncTask<Appointment, Void, Void> {
+    public void delete(Appointment appointment) {
+        new AppointmentRepository.deleteAsyncTask(mAppointmentDAO).execute(appointment);
+    }
 
+    public void deleteById(int id) {
+        new AppointmentRepository.deleteAsyncTask(mAppointmentDAO, id).execute();
+    }
+
+    /**
+     * Async task to insert appointments into the database
+     */
+    private static class insertAsyncTask extends AsyncTask<Appointment, Void, Void> {
         private AppointmentDAO mAsyncTaskDao;
 
         insertAsyncTask(AppointmentDAO dao) {
@@ -70,6 +87,60 @@ public class AppointmentRepository {
         @Override
         protected Void doInBackground(final Appointment... params) {
             mAsyncTaskDao.insertAll(params);
+            return null;
+        }
+    }
+
+    /**
+     * Async task to update appointments in the database
+     */
+    private static class updateAsyncTask extends AsyncTask<Appointment, Void, Void> {
+        private AppointmentDAO mAsyncTaskDao;
+
+        updateAsyncTask(AppointmentDAO dao) {
+            mAsyncTaskDao = dao;
+        }
+
+        @Override
+        protected Void doInBackground(Appointment... appointments) {
+            mAsyncTaskDao.update(appointments);
+            return null;
+        }
+    }
+
+    /**
+     * Async task to delete appointments from the database, either by object or ID, depending on the constructor used.
+     */
+    private static class deleteAsyncTask extends AsyncTask<Appointment, Void, Void> {
+        private AppointmentDAO mAsyncTaskDao;
+        private int mId = -1;
+
+        /**
+         * Constructor to delete appointments by object.
+         *
+         * @param dao appointments DAO
+         */
+        deleteAsyncTask(AppointmentDAO dao) {
+            mAsyncTaskDao = dao;
+        }
+
+        /**
+         * Constructor to delete appointments by ID.
+         *
+         * @param dao appointments DAO.
+         * @param id  Id of the appointment to delete.
+         */
+        deleteAsyncTask(AppointmentDAO dao, int id) {
+            mId = id;
+            mAsyncTaskDao = dao;
+        }
+
+        @Override
+        protected Void doInBackground(Appointment... appointments) {
+            if (mId == -1)
+                mAsyncTaskDao.delete(appointments);
+            else
+                mAsyncTaskDao.deleteById(mId);
             return null;
         }
     }

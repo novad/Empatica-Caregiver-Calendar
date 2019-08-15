@@ -14,6 +14,7 @@ import java.util.List;
 
 import nova.daniel.empatica.api.CaregiversApi;
 import nova.daniel.empatica.model.Caregiver;
+import nova.daniel.empatica.persistence.dao.CaregiverDAO;
 
 /**
  * Deals with local persistence and remote API calls for {@link Caregiver}s
