@@ -15,6 +15,9 @@ import java.util.List;
 import nova.daniel.empatica.api.CaregiversApi;
 import nova.daniel.empatica.model.Caregiver;
 
+/**
+ * Deals with local persistence and remote API calls for {@link Caregiver}s
+ */
 public class CaregiverRepository {
 
     private Context mContext;
@@ -22,20 +25,23 @@ public class CaregiverRepository {
     private CaregiverDAO mCaregiverDAO;
     private LiveData<List<Caregiver>> mCaregivers;
 
-    // Note that in order to unit test the repository, you have to remove the Application
-    // dependency. This adds complexity and much more code, and this sample is not about testing.
-    // See the BasicSample in the android-architecture-components repository at
-    // https://github.com/googlesamples
+    /**
+     * Listeners interfaces when the API results arrive.
+     */
+    public interface APICallbackListener {
+        void resultCallback(JSONObject response);
+
+        void resultError();
+    }
+
     public CaregiverRepository(Application application) {
         mContext = application.getApplicationContext();
         AppDatabase db = AppDatabase.getInMemoryDatabase(application);
         mCaregiverDAO = db.caregiverDAO();
 
-        loadCaregivers(1);
+        loadCaregivers(1); // By default, on the first call fetch the first page
     }
 
-    // Room executes all queries on a separate thread.
-    // Observed LiveData will notify the observer when the data has changed.
     public LiveData<List<Caregiver>> getAllCaregivers() {
         mCaregivers = mCaregiverDAO.getAll();
         return mCaregivers;
@@ -50,6 +56,9 @@ public class CaregiverRepository {
         new insertAsyncTask(mCaregiverDAO).execute(caregiver);
     }
 
+    private void deleteAll() {
+        new deleteAllAsyncTask(mCaregiverDAO).execute();
+    }
 
     /**
      * Fetch caregivers from the API and update the database,
@@ -60,10 +69,14 @@ public class CaregiverRepository {
         CaregiversApi.fetchCaregivers(page, new APICallbackListener() {
             @Override
             public void resultCallback(JSONObject response) {
+
+                // There is a connection and the server respond, then invalidate the cache we saved in the database
+                deleteAll();
+
                 try {
                     JSONArray results = response.getJSONArray("results");
 
-                    for(int i = 0 ; i < results.length(); i++){
+                    for(int i = 0; i < results.length(); i++){
                         JSONObject nameJSON = results.getJSONObject(i).getJSONObject("name");
                         String firstName =  nameJSON.getString("first");
                         String lastName =  nameJSON.getString("last");
@@ -81,7 +94,6 @@ public class CaregiverRepository {
                         newCaregiver.mPictureURL = picUrl;
 
                         insert(newCaregiver);
-                        System.out.printf("Caregiver %s added%n", uuid);
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -90,17 +102,14 @@ public class CaregiverRepository {
 
             @Override
             public void resultError() {
-                System.out.println("CaregiversActivity: Error loading caregivers form API, using local database");
+                System.out.println("CaregiversRepository: Error loading caregivers form API, using local database");
             }
         });
     }
 
-
-    public interface APICallbackListener{
-        public void resultCallback(JSONObject response);
-        public void resultError();
-    }
-
+    /**
+     * Async task to insert caregivers into the database
+     */
     private static class insertAsyncTask extends AsyncTask<Caregiver, Void, Void> {
 
         private CaregiverDAO mAsyncTaskDao;
@@ -112,6 +121,24 @@ public class CaregiverRepository {
         @Override
         protected Void doInBackground(final Caregiver... params) {
             mAsyncTaskDao.insertCaregivers(params[0]);
+            return null;
+        }
+    }
+
+    /**
+     * Async Task to delete all caregivers from the database
+     */
+    private static class deleteAllAsyncTask extends AsyncTask<Void, Void, Void> {
+
+        private CaregiverDAO mAsyncTaskDao;
+
+        deleteAllAsyncTask(CaregiverDAO dao) {
+            mAsyncTaskDao = dao;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            mAsyncTaskDao.deleteAll();
             return null;
         }
     }
