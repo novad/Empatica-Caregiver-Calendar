@@ -63,6 +63,7 @@ public class MainActivity extends AppCompatActivity
         mSelectedDate = new Date(); // Current date
 
         // Fab to trigger the auto-fit caregiver's appointment slots
+        // TODO: add auto-fit functionality
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(view ->
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
@@ -109,7 +110,7 @@ public class MainActivity extends AppCompatActivity
 
     /**
      * Listener to create a new Appointment for the given hour of the day.
-     * Starts a {@link SlotActivity}.
+     * Starts a {@link AppointmentActivity}.
      *
      * @param hour Hour of the day
      */
@@ -117,22 +118,22 @@ public class MainActivity extends AppCompatActivity
     public void onNewSlotClick(int hour) {
         Date slotDate = getCurrentDate(hour);
 
-        Intent newIntent = new Intent(this, SlotActivity.class);
-        newIntent.putExtra(SlotActivity.SLOTDATE, slotDate.getTime());
+        Intent newIntent = new Intent(this, AppointmentActivity.class);
+        newIntent.putExtra(AppointmentActivity.SLOT_DATE, slotDate.getTime());
         startActivityForResult(newIntent, 1);
     }
 
     /**
-     * Listener to open an {@link SlotActivity} activity to edit the appointment details.
+     * Listener to open an {@link AppointmentActivity} activity to edit the appointment details.
      * By passing SlotActivity.APPOINTMENT_ID the activity is auto-filled with the appointment details.
      * @param appointmentID ID of the appointment to edit.
      * @param date Date of the appointment to edit.
      */
     @Override
     public void onSlotClick(int appointmentID, long date) {
-        Intent newIntent = new Intent(this, SlotActivity.class);
-        newIntent.putExtra(SlotActivity.APPOINTMENT_ID, appointmentID);
-        newIntent.putExtra(SlotActivity.SLOTDATE, date);
+        Intent newIntent = new Intent(this, AppointmentActivity.class);
+        newIntent.putExtra(AppointmentActivity.APPOINTMENT_ID, appointmentID);
+        newIntent.putExtra(AppointmentActivity.SLOT_DATE, date);
         startActivityForResult(newIntent, 1);
     }
 
@@ -201,7 +202,7 @@ public class MainActivity extends AppCompatActivity
     protected void onActivityResult(int requestCode, int resultCode, Intent intent){
         if(resultCode == RESULT_OK){
             if (intent != null) {
-                mSelectedDate = new Date(intent.getLongExtra(SlotActivity.SLOTDATE, mSelectedDate.getTime()));
+                mSelectedDate = new Date(intent.getLongExtra(AppointmentActivity.SLOT_DATE, mSelectedDate.getTime()));
                 setCurrentDayModel(mSelectedDate);
                 newDateSelected(mCurrentDayModel);
             }
