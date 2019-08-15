@@ -13,6 +13,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import nova.daniel.empatica.model.Appointment;
 import nova.daniel.empatica.model.Caregiver;
+import nova.daniel.empatica.persistence.dao.AppointmentDAO;
+import nova.daniel.empatica.persistence.dao.CaregiverDAO;
 
 /**
  * Room class to persist {@link Appointment} and {@link Caregiver} objects.
