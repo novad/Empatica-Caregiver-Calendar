@@ -9,8 +9,12 @@ import androidx.room.PrimaryKey;
 import java.util.Calendar;
 import java.util.Date;
 
-import nova.daniel.empatica.model.Caregiver;
-
+/**
+ * Class that represents an appointment. Consisting of a patient name, room number, date, and
+ * reference to the caregiver.
+ * <p>
+ * Marked as entity to be used directly with Room persistence library.
+ */
 @Entity
 public class Appointment {
 

@@ -1,32 +1,25 @@
 package nova.daniel.empatica.model;
 
-import java.util.Date;
 import java.util.List;
 
+/**
+ * Represents the number of appointments for a given hour.
+ */
 public class HourSlotModel {
 
-    private String mHourLabel;
-    private List<Appointment> mSlotsList;
-    private Date mDate;
+    private String mHourLabel;  // Hour label
+    private List<Appointment> mAppointmentsList;  // List of appointments for the set mDate
 
-
-    public HourSlotModel(String hourLabel, Date date, List<Appointment> slots) {
+    HourSlotModel(String hourLabel, List<Appointment> slots) {
         this.mHourLabel = hourLabel;
-        this.mDate = date;
-        mSlotsList = slots;
+        mAppointmentsList = slots;
     }
-
-    public List<Appointment> getAppointmentByDate(Date date){
-        System.out.println("asshole");
-        return mSlotsList;
-    }
-
 
     public String getHourLabel() {
         return mHourLabel;
     }
 
     public List<Appointment> getItemArrayList() {
-        return getAppointmentByDate(mDate);
+        return mAppointmentsList;
     }
 }
