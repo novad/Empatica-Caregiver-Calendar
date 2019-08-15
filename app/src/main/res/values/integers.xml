@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="num_rooms">10</integer>
+    <integer name="api_results">10</integer>
+    <integer name="api_max_results">100</integer>
+
+</resources>
