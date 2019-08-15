@@ -14,6 +14,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 import nova.daniel.empatica.model.Appointment;
 import nova.daniel.empatica.model.Caregiver;
 
+/**
+ * Room class to persist {@link Appointment} and {@link Caregiver} objects.
+ */
 @Database(entities = {Appointment.class, Caregiver.class}, version = 1,
         exportSchema = false)
 @TypeConverters({Converters.class})
@@ -21,10 +24,12 @@ public abstract class AppDatabase extends RoomDatabase {
 
     private static AppDatabase INSTANCE;
 
+    // DAOs
     public abstract AppointmentDAO appointmentDAO();
+
     public abstract CaregiverDAO caregiverDAO();
 
-    public static AppDatabase getInMemoryDatabase(Context context) {
+    static AppDatabase getInMemoryDatabase(Context context) {
         if (INSTANCE == null) {
             synchronized (AppDatabase.class) {
                 INSTANCE =
@@ -39,12 +44,12 @@ public abstract class AppDatabase extends RoomDatabase {
         }
         return INSTANCE;
     }
+
     public static void destroyInstance() {
         INSTANCE = null;
     }
 
     private static AppDatabase.Callback dbCallback = new RoomDatabase.Callback(){
-
         @Override
         public void onCreate(@NonNull SupportSQLiteDatabase db) {
             super.onCreate(db);
@@ -52,6 +57,9 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * Method to populate the database
+     */
     private static class PopulateDbAsync extends AsyncTask<Void, Void, Void> {
 
         private final CaregiverDAO mDao;
