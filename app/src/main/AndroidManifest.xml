@@ -26,14 +26,14 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.SlotActivity"
+            android:name=".ui.AppointmentActivity"
             android:label="@string/title_activity_slot"
             android:screenOrientation="portrait"
             android:parentActivityName=".ui.MainActivity"
             />
         <activity android:name=".ui.CaregiversActivity"
             android:label="Choose a caregiver"
-            android:parentActivityName=".ui.SlotActivity"
+            android:parentActivityName=".ui.AppointmentActivity"
             />
     </application>
 
