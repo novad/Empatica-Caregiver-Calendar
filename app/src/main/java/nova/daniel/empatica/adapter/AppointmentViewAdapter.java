@@ -66,7 +66,7 @@ public class AppointmentViewAdapter extends RecyclerView.Adapter<AppointmentView
         holder.mPosition = position;
         int roomNumber = mAppointmentsList.get(position).mRoom;
 
-        Caregiver caregiver = mAppointmentsList.get(position).getCaregiver();
+        Caregiver caregiver = mAppointmentsList.get(position).mCaregiver;
 
         holder.mRoomTextView.setText(String.format(Locale.getDefault(), "%d", roomNumber));
         holder.mCarerTextView.setText(caregiver.getName());
