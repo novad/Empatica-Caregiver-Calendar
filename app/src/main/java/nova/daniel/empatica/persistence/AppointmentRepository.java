@@ -3,6 +3,7 @@ package nova.daniel.empatica.persistence;
 import android.app.Application;
 import android.content.Context;
 import android.os.AsyncTask;
+import android.provider.CalendarContract;
 
 import androidx.lifecycle.LiveData;
 
@@ -95,6 +96,19 @@ public class AppointmentRepository {
         long end = cal.getTime().getTime();
 
         return mAppointmentDAO.getCaregiversByDate(start, end, new int[]{appointmentId});
+    }
+
+
+    public LiveData<Integer> countCaregiverSlotsForWeek(Date date, String caregiverId) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
+        long start = cal.getTime().getTime();
+
+        cal.add(Calendar.WEEK_OF_YEAR, 1);
+        long end = cal.getTime().getTime();
+
+        return mAppointmentDAO.countCaregiverSlotsForWeek(start, end, caregiverId);
     }
 
 
