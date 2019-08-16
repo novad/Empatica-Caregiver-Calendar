@@ -79,11 +79,13 @@ public class AppointmentRepository {
 
     /**
      * Gets ids of caregivers associated with appointments scheduled for a specific hour of the day
+     * The given appointment id is excluded from the query.
      *
      * @param date Date of the appointments to query
+     * @param appointmentId Appointment ID to exclude.
      * @return List of caregivers ids for the given date
      */
-    public LiveData<List<String>> getCaregiversForDateHour(Date date, Appointment appointment) {
+    public LiveData<List<String>> getCaregiversForDateHour(Date date, int appointmentId) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
         cal.set(Calendar.MINUTE, 0);
@@ -92,7 +94,7 @@ public class AppointmentRepository {
         cal.set(Calendar.MINUTE, 59);
         long end = cal.getTime().getTime();
 
-        return mAppointmentDAO.getCaregiversByDate(start, end, new int[]{appointment.appointmentId});
+        return mAppointmentDAO.getCaregiversByDate(start, end, new int[]{appointmentId});
     }
 
 
