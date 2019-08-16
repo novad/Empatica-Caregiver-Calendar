@@ -1,14 +1,11 @@
 package nova.daniel.empatica.viewmodel;
 
 import android.app.Application;
-import android.content.Context;
 
 import androidx.annotation.NonNull;
-import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Observer;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,11 +25,26 @@ import nova.daniel.empatica.persistence.AppointmentRepository;
  */
 public class AppointmentViewModel extends AndroidViewModel {
 
+    public enum CONFLICT_CODES {
+        CAREGIVER_BUSY,    // Caregiver busy
+        ROOM_UNAVAILABLE,  // Room not available
+        NONE              // No conflict found
+    }
+
     private AppointmentRepository mRepository;
     private LiveData<List<Appointment>> mAppointments; //data set
     private LiveData<List<Integer>> mSpinnerData;
+    public LiveData<List<String>> caregiversByHourData;
     public Caregiver newAppointmentCaregiver;
+    // Update params
+    public int editingAppointmentId = -1;
     public int currentRoomNumber;
+
+    public interface AppointmentModelCallback {
+        void conflictResultCallback(Appointment appointment, CONFLICT_CODES errorCode);
+    }
+
+    private AppointmentModelCallback modelCallback;
 
     /**
      * Constructor, initializes the {@link AppointmentRepository} instance.
@@ -103,23 +115,66 @@ public class AppointmentViewModel extends AndroidViewModel {
         mRepository.deleteById(id);
     }
 
-    /**fixme update dosctring
-     * Fetches the rooms available for the given date.
-     * Since the repository query is asynchronous, when the result is obtained the listener is called. todo
+    // Methods for checking constraints
+
+    public void checkCaregiverForConflict(Appointment appointment, LifecycleOwner owner) {
+
+        modelCallback = (AppointmentModelCallback) owner;
+        caregiversByHourData = getCaregiversForHourDate(appointment.mDate, editingAppointmentId);
+        caregiversByHourData.observe(owner, uuids -> {
+            boolean caregiverBusy = uuids.contains(appointment.mCaregiver.uuid);
+
+            CONFLICT_CODES code = CONFLICT_CODES.NONE;
+
+            if (caregiverBusy)
+                code = CONFLICT_CODES.CAREGIVER_BUSY;
+
+            modelCallback.conflictResultCallback(appointment, code);
+        });
+    }
+
+    /**
+     * Fetches the rooms used for the given date.
      * @param date Appointment query date.
+     * @return Live data of the list of rooms used in the given date.
      */
     public LiveData<List<Integer>> getTakenRooms(Date date) {
-        mSpinnerData = mRepository.getAppointmentsOfHourForDate(date);
+        mSpinnerData = mRepository.getUsedRoomsForDateHour(date);
         return mSpinnerData;
+    }
 
+    /**
+     * Fetch caregivers ids for the selected date, excluding the given appointment
+     *
+     * @param date          Date
+     * @param appointmentId Appointment id
+     * @return List of caregivers uuids.
+     */
+    public LiveData<List<String>> getCaregiversForHourDate(Date date, int appointmentId) {
+        return mRepository.getCaregiversForDateHour(date, appointmentId);
     }
 
 
-    public List<Integer> getAllRoomsList(){
+    // Non repository based
+
+    /**
+     * Returns a list containing consecutive integers until the value set in num_rooms in the
+     * integers resources file.
+     *
+     * @return List of integers from 1 up to num_rooms
+     */
+    private List<Integer> getAllRoomsList(){
         int maxRooms = getApplication().getResources().getInteger(R.integer.num_rooms);
         return IntStream.rangeClosed(1, maxRooms).boxed().collect(Collectors.toList());
     }
 
+    /**
+     * Finds the available rooms finding the difference between all rooms and the taken ones.
+     * A current room is added to ensure that the appointment being edited (if applicable) is excluded from the list to avoid conflicts.
+     * @param takenRooms List of taken rooms
+     * @param currentRoom Room of the appointment being edited.
+     * @return List of available room numbers
+     */
     public List<Integer> getAvailableRooms(List<Integer> takenRooms, int currentRoom) {
         Collection totalRooms = getAllRoomsList();
         totalRooms.removeAll(takenRooms);
@@ -128,5 +183,4 @@ public class AppointmentViewModel extends AndroidViewModel {
         Collections.sort(rooms);
         return rooms;
     }
-
 }
