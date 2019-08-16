@@ -27,6 +27,7 @@ public class AppointmentViewModel extends AndroidViewModel {
 
     public enum CONFLICT_CODES {
         CAREGIVER_BUSY,    // Caregiver busy
+        CAREGIVER_BUSY_MAX_SLOTS,    // Caregiver busy
         ROOM_UNAVAILABLE,  // Room not available
         NONE              // No conflict found
     }
@@ -35,10 +36,16 @@ public class AppointmentViewModel extends AndroidViewModel {
     private LiveData<List<Appointment>> mAppointments; //data set
     private LiveData<List<Integer>> mSpinnerData;
     public LiveData<List<String>> caregiversByHourData;
+    public LiveData<Integer> caregiversByWeek;
     public Caregiver newAppointmentCaregiver;
     // Update params
     public int editingAppointmentId = -1;
     public int currentRoomNumber;
+
+    // Number of checks performed before an appointment can be added
+    // One check for hourly caregiver conflicts, and one for weekly conflicts.
+    private List<CONFLICT_CODES> mChecks;
+    public static final int CHECKS_THRESHOLD = 2;
 
     public interface AppointmentModelCallback {
         void conflictResultCallback(Appointment appointment, CONFLICT_CODES errorCode);
@@ -119,6 +126,8 @@ public class AppointmentViewModel extends AndroidViewModel {
 
     public void checkCaregiverForConflict(Appointment appointment, LifecycleOwner owner) {
 
+        mChecks = new ArrayList<>();
+
         modelCallback = (AppointmentModelCallback) owner;
         caregiversByHourData = getCaregiversForHourDate(appointment.mDate, editingAppointmentId);
         caregiversByHourData.observe(owner, uuids -> {
@@ -129,6 +138,24 @@ public class AppointmentViewModel extends AndroidViewModel {
             if (caregiverBusy)
                 code = CONFLICT_CODES.CAREGIVER_BUSY;
 
+            mChecks.add(code);
+
+            modelCallback.conflictResultCallback(appointment, code);
+        });
+
+        caregiversByWeek = countCaregiversForWeek(appointment.mDate, appointment.mCaregiver.uuid);
+        caregiversByWeek.observe(owner, count -> {
+
+            int max_slots = getApplication().getResources().getInteger(R.integer.max_caregiver_slots_per_week);
+
+            CONFLICT_CODES code;
+
+            if(count >= max_slots) {
+                code = CONFLICT_CODES.CAREGIVER_BUSY_MAX_SLOTS;
+            }else {
+                code = CONFLICT_CODES.NONE;
+            }
+            mChecks.add(code);
             modelCallback.conflictResultCallback(appointment, code);
         });
     }
@@ -154,6 +181,9 @@ public class AppointmentViewModel extends AndroidViewModel {
         return mRepository.getCaregiversForDateHour(date, appointmentId);
     }
 
+    public LiveData<Integer> countCaregiversForWeek(Date date, String caregiverID) {
+        return mRepository.countCaregiverSlotsForWeek(date, caregiverID);
+    }
 
     // Non repository based
 
@@ -182,5 +212,12 @@ public class AppointmentViewModel extends AndroidViewModel {
         if(currentRoom!=0) rooms.add(currentRoom);
         Collections.sort(rooms);
         return rooms;
+    }
+
+    public boolean allChecksPassed(){
+        boolean anyChecks = !mChecks.contains(CONFLICT_CODES.CAREGIVER_BUSY) && !mChecks.contains(CONFLICT_CODES.CAREGIVER_BUSY_MAX_SLOTS)
+                && !mChecks.contains(CONFLICT_CODES.ROOM_UNAVAILABLE);
+
+        return mChecks.size() >= CHECKS_THRESHOLD && anyChecks;
     }
 }
