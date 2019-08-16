@@ -23,4 +23,5 @@
     <string name="loading">Loading....</string>
     <string name="error_no_caregiver_selected">Select a caregiver from the list</string>
     <string name="error_busy_caregiver">Caregiver is busy for the given date, please select another one.</string>
+    <string name="error_caregiver_max_slots_week">Caregiver cannot be assigned more time-slots this week. Please select another one.</string>
 </resources>
