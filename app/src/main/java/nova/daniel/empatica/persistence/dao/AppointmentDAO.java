@@ -47,4 +47,6 @@ public interface AppointmentDAO {
     @Query("DELETE FROM Appointment WHERE appointmentId = :id")
     void deleteById(int id);
 
+    @Query("SELECT COUNT(*) FROM Appointment WHERE uuid=:caregiverId AND date BETWEEN :start AND :end")
+    LiveData<Integer> countCaregiverSlotsForWeek(long start, long end, String caregiverId);
 }
