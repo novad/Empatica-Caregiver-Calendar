@@ -43,7 +43,7 @@ public class CaregiversActivity extends AppCompatActivity implements CaregiverAd
 
         // Show loading dialog
         progressDialog = new ProgressDialog(CaregiversActivity.this);
-        progressDialog.setMessage("Loading....");
+        progressDialog.setMessage(getString(R.string.loading));
         progressDialog.show();
 
         // Set up recycler view
@@ -55,8 +55,12 @@ public class CaregiversActivity extends AppCompatActivity implements CaregiverAd
         // Created ViewModel and update adapter in case of changes.
         mCaregiverViewModel = ViewModelProviders.of(this).get(CaregiverViewModel.class);
         mCaregiverViewModel.getAllCaregivers().observe(this, caregiverEntities -> {
-            if (caregiverEntities.size() != 0)
-                progressDialog.dismiss();
+            if (caregiverEntities.size() == 0) {
+                Toast.makeText(this, getString(R.string.toast_no_available_caregivers), Toast.LENGTH_LONG).show();
+                finish();
+
+            }
+            progressDialog.dismiss();
             mAdapter.setCaregiversList(caregiverEntities);
         });
     }
@@ -71,7 +75,7 @@ public class CaregiversActivity extends AppCompatActivity implements CaregiverAd
     public void loadMoreOnClick(View view) {
         // Check for fetch limit and disable the "load more" button
         if (mCaregiverViewModel.isOverLimit()){
-            Toast.makeText(this, "Maximum allowed of fetched caregivers reached", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.toast_max_caregivers_reached), Toast.LENGTH_SHORT).show();
             View button = findViewById(R.id.loadmore_button);
             button.setEnabled(false);
         } else {
@@ -86,7 +90,7 @@ public class CaregiversActivity extends AppCompatActivity implements CaregiverAd
      * @param view Clicked View
      */
     public void sortOnClick(View view){
-        Toast.makeText(this, "Sorting by last name", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, getString(R.string.toast_sortingname), Toast.LENGTH_SHORT).show();
         mAdapter.doSort();
     }
 
