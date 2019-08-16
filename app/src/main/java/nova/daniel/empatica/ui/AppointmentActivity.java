@@ -19,8 +19,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import jp.wasabeef.glide.transformations.RoundedCornersTransformation;
 import nova.daniel.empatica.R;
@@ -34,7 +32,7 @@ import nova.daniel.empatica.viewmodel.CaregiverViewModel;
 /**
  * Displays the information to add or edit appointments.
  */
-public class AppointmentActivity extends AppCompatActivity {
+public class AppointmentActivity extends AppCompatActivity{
 
     public static final String SLOT_DATE = "SLOT_HOUR";
     public static final String APPOINTMENT_ID = "APPOINTMENT_ID";
@@ -50,13 +48,14 @@ public class AppointmentActivity extends AppCompatActivity {
     private Button mSaveButton;
     private FloatingActionButton mDeleteFab;
 
+    private ArrayAdapter<Integer> mRoomsAdapter;
+
     CaregiverViewModel mCaregiverViewModel;
     AppointmentViewModel mAppointmentViewModel;
 
     private boolean isCaregiverSelected = false;
 
     private Date mDate;
-    private Caregiver mCaregiver;
     private int mAppointmentId = -1;
 
     @Override
@@ -75,34 +74,27 @@ public class AppointmentActivity extends AppCompatActivity {
         mSaveButton = findViewById(R.id.saveAppointment_Button);
         mDeleteFab = findViewById(R.id.delete_fab);
 
-        // Set up rooms
-        int numRooms = getResources().getInteger(R.integer.num_rooms);
-        List<Integer> rooms = IntStream.rangeClosed(1, numRooms).boxed().collect(Collectors.toList());
-
         // Get and display Date form the intent
         mDate = new Date(intent.getLongExtra(SLOT_DATE, 0));
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
         mDateTextView.setText(formatter.format(mDate));
-
-        // Rooms spinner
-        ArrayAdapter<Integer> roomsAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, rooms);
-        roomsAdapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
-        mRoomSpinner.setAdapter(roomsAdapter);
 
         // View Models for appointments and caregivers
         mCaregiverViewModel = ViewModelProviders.of(this).get(CaregiverViewModel.class);
         mAppointmentViewModel = ViewModelProviders.of(this).get(AppointmentViewModel.class);
 
         // If editing an existing appointment
+        int id = intent.getIntExtra(APPOINTMENT_ID, -1);
         if (intent.hasExtra(APPOINTMENT_ID)) {
-            int id = intent.getIntExtra(APPOINTMENT_ID, -1);
             if (id != -1) {
                 mUpdate = true;
                 setUpAppointmentViews(id);
             }
         } else {
             setUpEmptyViews();
+            getAvailableRooms();
         }
+
     }
 
     /**
@@ -126,12 +118,29 @@ public class AppointmentActivity extends AppCompatActivity {
                 Appointment appointment = appointments.get(0);
                 mAppointmentId = appointment.appointmentId;
                 mPatientNameEditText.setText(appointment.mPatientName);
-                mRoomSpinner.setSelection(appointment.mRoom - 1);
                 mSaveButton.setText(getString(R.string.update_appointment));
+                mAppointmentViewModel.currentRoomNumber = appointment.mRoom;
                 updateCaregiverForAppointment(appointment.mCaregiver.uuid);
 
                 mDeleteFab.show();
+                getAvailableRooms(); // we gotta wait for the respective appointment to be fetched before setting up the spinner
             }
+        });
+    }
+
+    void setUpSpinnerData(List<Integer> rooms){
+        mRoomsAdapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_spinner_item, rooms);
+        mRoomsAdapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+        mRoomSpinner.setAdapter(mRoomsAdapter);
+
+        int spinnerPosition = mRoomsAdapter.getPosition(mAppointmentViewModel.currentRoomNumber);
+        mRoomSpinner.setSelection(spinnerPosition);
+    }
+    public void getAvailableRooms(){
+        mAppointmentViewModel.getTakenRooms(mDate).observe(this, takenRooms -> {
+            List<Integer> rooms = mAppointmentViewModel.getAvailableRooms(takenRooms,
+                    mAppointmentViewModel.currentRoomNumber);
+            setUpSpinnerData(rooms);
         });
     }
 
@@ -156,24 +165,27 @@ public class AppointmentActivity extends AppCompatActivity {
 
         // Set up view model for the selected caregiver and its respective views
         mCaregiverViewModel.getCaregiverByID(ids).observe(this, caregivers -> {
-            mCaregiver = caregivers.get(0);
+            if(caregivers != null && caregivers.size()>0) {
+                Caregiver caregiver = caregivers.get(0);
+                mAppointmentViewModel.newAppointmentCaregiver = caregiver;
 
-            String name = Utils.capitalizeString(mCaregiver.mFirstName);
-            mCarerFirstNameTextView.setText(name);
-            String lastName = Utils.capitalizeString(mCaregiver.mLastName);
-            mCarerLastNameTextView.setText(lastName);
+                String name = Utils.capitalizeString(caregiver.mFirstName);
+                mCarerFirstNameTextView.setText(name);
+                String lastName = Utils.capitalizeString(caregiver.mLastName);
+                mCarerLastNameTextView.setText(lastName);
 
-            mCaregiverPictureView.setVisibility(View.VISIBLE);
+                mCaregiverPictureView.setVisibility(View.VISIBLE);
 
-            // Set pic with Glide
-            GlideApp.with(AppointmentActivity.this)
-                    .load(mCaregiver.mPictureURL)
-                    .placeholder(R.drawable.ic_person_outline_white_24dp)
-                    .centerCrop()
-                    .transform(new RoundedCornersTransformation(45, 2))
-                    .into(mCaregiverPictureView);
+                // Set pic with Glide
+                GlideApp.with(AppointmentActivity.this)
+                        .load(caregiver.mPictureURL)
+                        .placeholder(R.drawable.ic_person_outline_white_24dp)
+                        .centerCrop()
+                        .transform(new RoundedCornersTransformation(45, 2))
+                        .into(mCaregiverPictureView);
 
-            isCaregiverSelected = true;
+                isCaregiverSelected = true;
+            }
         });
     }
 
@@ -192,11 +204,11 @@ public class AppointmentActivity extends AppCompatActivity {
         }
 
         // Check if a patient name has been set
-        String inputEditText = mPatientNameEditText.getText().toString();
-        if (inputEditText.isEmpty() || inputEditText.trim().length() <= 0) {
-            mPatientNameEditText.setError("Patient name cannot be empty");
-            return false;
-        }
+//        String inputEditText = mPatientNameEditText.getText().toString();
+//        if (inputEditText.isEmpty() || inputEditText.trim().length() <= 0) {
+//            mPatientNameEditText.setError("Patient name cannot be empty");
+//            return false;
+//        }
         return true;
     }
 
@@ -208,7 +220,6 @@ public class AppointmentActivity extends AppCompatActivity {
      */
     public void onAddAppointment(View view) {
         /*TODO: When adding an appointment, check for room and caregiver limitations
-         * Check if caregiver has been selected
          * Check if the room is available
          * Check if the caregiver can work more than week
          */
@@ -217,10 +228,13 @@ public class AppointmentActivity extends AppCompatActivity {
         }
 
         int room = Integer.parseInt(mRoomSpinner.getSelectedItem().toString());
+
         String patientName = mPatientNameEditText.getText().toString().toLowerCase();
+        Appointment newAppointment = new Appointment(mDate,
+                mAppointmentViewModel.newAppointmentCaregiver,
+                patientName, room);
 
-        Appointment newAppointment = new Appointment(mDate, mCaregiver, patientName, room);
-
+        // Update or insert
         if (mUpdate) {
             newAppointment.appointmentId = mAppointmentId;
             mAppointmentViewModel.update(newAppointment);
@@ -265,6 +279,7 @@ public class AppointmentActivity extends AppCompatActivity {
             if (intent != null) {
                 String caregiverId = intent.getStringExtra(CaregiversActivity.SELECTED_CAREGIVER);
                 updateCaregiverForAppointment(caregiverId);
+                mCarerLastNameTextView.setError(null);
             }
         }
     }

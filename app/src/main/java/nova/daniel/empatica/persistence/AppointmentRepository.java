@@ -58,6 +58,24 @@ public class AppointmentRepository {
         return mAppointments;
     }
 
+
+    /**
+     * Gets room numbers of appointments scheduled for a specific hour of the day
+     * @param date Date of the appointments to query
+     * @return List of rooms for the given date
+     */
+    public LiveData<List<Integer>> getAppointmentsOfHourForDate(Date date) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.set(Calendar.MINUTE, 0);
+        long start = cal.getTime().getTime();
+
+        cal.set(Calendar.MINUTE, 59);
+        long end = cal.getTime().getTime();
+
+        return mAppointmentDAO.getAppointmentRoomsByDate(start, end);
+    }
+
     public void insert(Appointment appointment) {
         new AppointmentRepository.insertAsyncTask(mAppointmentDAO).execute(appointment);
     }

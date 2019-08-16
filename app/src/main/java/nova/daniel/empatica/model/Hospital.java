@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import nova.daniel.empatica.R;
 import nova.daniel.empatica.viewmodel.AppointmentViewModel;
 
 /**
@@ -75,6 +76,26 @@ public class Hospital {
                     hourAppointments.add(appointment);
             }
         return hourAppointments;
+    }
+
+    /**
+     * Checks if there are available rooms for the given hour slot.
+     * Since only one room can be assigned for each time-slot, we check if the number of appointments for the
+     * given hour exceed the number of available rooms.
+     * @param hour Appointment hour
+     * @return True if there are rooms available, false if no rooms are available.
+     */
+    public boolean checkHourRoomLimits(int hour){
+        String hourLabel = hour + ":00";
+        int maxRooms = mContext.getResources().getInteger(R.integer.num_rooms);
+
+        for (HourSlotModel hourSlot : mHourSlotModelList){
+            if (hourSlot.getHourLabel().equalsIgnoreCase(hourLabel)){
+                if (hourSlot.getItemArrayList().size() >= maxRooms)
+                    return false;
+            }
+        }
+        return true;
     }
 
     /**

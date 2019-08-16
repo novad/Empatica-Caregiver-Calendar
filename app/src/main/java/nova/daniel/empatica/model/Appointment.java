@@ -9,6 +9,8 @@ import androidx.room.PrimaryKey;
 import java.util.Calendar;
 import java.util.Date;
 
+import nova.daniel.empatica.Utils;
+
 /**
  * Class that represents an appointment. Consisting of a patient name, room number, date, and
  * reference to the caregiver.
@@ -34,7 +36,8 @@ public class Appointment {
 
     @Ignore
     public Appointment(Date date, Caregiver caregiver, String patientName, int room) {
-        this.mDate = date;
+
+        this.mDate = Utils.removeMinutesSecondsAndMillis(date);
         this.mCaregiver = caregiver;
         this.mPatientName = patientName;
         this.mRoom = room;

@@ -1,15 +1,26 @@
 package nova.daniel.empatica.viewmodel;
 
 import android.app.Application;
+import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import nova.daniel.empatica.R;
 import nova.daniel.empatica.model.Appointment;
+import nova.daniel.empatica.model.Caregiver;
 import nova.daniel.empatica.persistence.AppointmentRepository;
 
 /**
@@ -19,6 +30,9 @@ public class AppointmentViewModel extends AndroidViewModel {
 
     private AppointmentRepository mRepository;
     private LiveData<List<Appointment>> mAppointments; //data set
+    private LiveData<List<Integer>> mSpinnerData;
+    public Caregiver newAppointmentCaregiver;
+    public int currentRoomNumber;
 
     /**
      * Constructor, initializes the {@link AppointmentRepository} instance.
@@ -88,4 +102,31 @@ public class AppointmentViewModel extends AndroidViewModel {
     public void delete(int id) {
         mRepository.deleteById(id);
     }
+
+    /**fixme update dosctring
+     * Fetches the rooms available for the given date.
+     * Since the repository query is asynchronous, when the result is obtained the listener is called. todo
+     * @param date Appointment query date.
+     */
+    public LiveData<List<Integer>> getTakenRooms(Date date) {
+        mSpinnerData = mRepository.getAppointmentsOfHourForDate(date);
+        return mSpinnerData;
+
+    }
+
+
+    public List<Integer> getAllRoomsList(){
+        int maxRooms = getApplication().getResources().getInteger(R.integer.num_rooms);
+        return IntStream.rangeClosed(1, maxRooms).boxed().collect(Collectors.toList());
+    }
+
+    public List<Integer> getAvailableRooms(List<Integer> takenRooms, int currentRoom) {
+        Collection totalRooms = getAllRoomsList();
+        totalRooms.removeAll(takenRooms);
+        List<Integer> rooms = new ArrayList<Integer>(totalRooms);
+        if(currentRoom!=0) rooms.add(currentRoom);
+        Collections.sort(rooms);
+        return rooms;
+    }
+
 }

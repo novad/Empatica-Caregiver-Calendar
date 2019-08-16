@@ -71,9 +71,6 @@ public class CaregiverRepository {
             @Override
             public void resultCallback(JSONObject response) {
 
-                // There is a connection and the server respond, then invalidate the cache we saved in the database
-                deleteAll();
-
                 try {
                     JSONArray results = response.getJSONArray("results");
 

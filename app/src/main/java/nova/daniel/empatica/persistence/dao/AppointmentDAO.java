@@ -27,6 +27,9 @@ public interface AppointmentDAO {
     @Query("SELECT * FROM Appointment WHERE date BETWEEN :start AND :end")
     LiveData<List<Appointment>> getAppointmentsByDate(long start, long end);
 
+    @Query("SELECT room_number FROM Appointment WHERE date BETWEEN :start AND :end")
+    LiveData<List<Integer>> getAppointmentRoomsByDate(long start, long end);
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(Appointment... appointments);
 
