@@ -3,6 +3,7 @@ package nova.daniel.empatica.ui;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -106,36 +107,6 @@ public class MainActivity extends AppCompatActivity
         mHospitalModel.updateModelDate(mSelectedDate);
     }
 
-    // Listeners
-
-    /**
-     * Listener to create a new Appointment for the given hour of the day.
-     * Starts a {@link AppointmentActivity}.
-     *
-     * @param hour Hour of the day
-     */
-    @Override
-    public void onNewSlotClick(int hour) {
-        Date slotDate = getCurrentDate(hour);
-
-        Intent newIntent = new Intent(this, AppointmentActivity.class);
-        newIntent.putExtra(AppointmentActivity.SLOT_DATE, slotDate.getTime());
-        startActivityForResult(newIntent, 1);
-    }
-
-    /**
-     * Listener to open an {@link AppointmentActivity} activity to edit the appointment details.
-     * By passing SlotActivity.APPOINTMENT_ID the activity is auto-filled with the appointment details.
-     * @param appointmentID ID of the appointment to edit.
-     * @param date Date of the appointment to edit.
-     */
-    @Override
-    public void onSlotClick(int appointmentID, long date) {
-        Intent newIntent = new Intent(this, AppointmentActivity.class);
-        newIntent.putExtra(AppointmentActivity.APPOINTMENT_ID, appointmentID);
-        newIntent.putExtra(AppointmentActivity.SLOT_DATE, date);
-        startActivityForResult(newIntent, 1);
-    }
 
     /**
      * Set the current date model during onCreate and by the other activity callbacks
@@ -174,6 +145,41 @@ public class MainActivity extends AppCompatActivity
         cal.set(Calendar.MILLISECOND, 0);
 
         return cal.getTime();
+    }
+
+    // Listeners
+
+    /**
+     * Listener to create a new Appointment for the given hour of the day.
+     * Starts a {@link AppointmentActivity}.
+     *
+     * @param hour Hour of the day
+     */
+    @Override
+    public void onNewSlotClick(int hour) {
+        Date slotDate = getCurrentDate(hour);
+
+        if (!mHospitalModel.checkHourRoomLimits(hour)){
+            Toast.makeText(this, "No more rooms are available for the selected hour", Toast.LENGTH_SHORT).show();
+        } else {
+            Intent newIntent = new Intent(this, AppointmentActivity.class);
+            newIntent.putExtra(AppointmentActivity.SLOT_DATE, slotDate.getTime());
+            startActivityForResult(newIntent, 1);
+        }
+    }
+
+    /**
+     * Listener to open an {@link AppointmentActivity} activity to edit the appointment details.
+     * By passing SlotActivity.APPOINTMENT_ID the activity is auto-filled with the appointment details.
+     * @param appointmentID ID of the appointment to edit.
+     * @param date Date of the appointment to edit.
+     */
+    @Override
+    public void onSlotClick(int appointmentID, long date) {
+        Intent newIntent = new Intent(this, AppointmentActivity.class);
+        newIntent.putExtra(AppointmentActivity.APPOINTMENT_ID, appointmentID);
+        newIntent.putExtra(AppointmentActivity.SLOT_DATE, date);
+        startActivityForResult(newIntent, 1);
     }
 
     /**
