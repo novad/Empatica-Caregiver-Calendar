@@ -1,5 +1,8 @@
 package nova.daniel.empatica;
 
+import java.util.Calendar;
+import java.util.Date;
+
 public class Utils {
     /**
      * Capitalizes the first letter of a given string.
@@ -50,4 +53,22 @@ public class Utils {
                 return -1;
         }
     }
+
+    /**
+     * Sets the minute, second, and millisecond of a given date to 0s-
+     * @param date Target Date
+     * @return Date with minute, second, and millisecond set to 0.
+     */
+    public static Date removeMinutesSecondsAndMillis(Date date){
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+
+        return cal.getTime();
+
+
+    }
+
 }
