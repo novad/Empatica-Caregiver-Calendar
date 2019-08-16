@@ -14,7 +14,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:layout_margin="18dp"
-            android:focusableInTouchMode="true"
             tools:context=".ui.SlotActivity">
 
 
@@ -52,7 +51,9 @@
                 android:layout_height="wrap_content"
                 android:onClick="openCaregiversActivity"
                 >
+
                 <include layout="@layout/caregiver_details" />
+
             </androidx.cardview.widget.CardView>
 
             <Button
@@ -68,7 +69,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:layout_margin="12dp"
+                android:layout_marginLeft="6dp"
+                android:layout_marginRight="6dp"
                 android:text="@string/patient_name" />
 
             <EditText
