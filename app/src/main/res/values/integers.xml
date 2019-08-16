@@ -3,5 +3,5 @@
     <integer name="num_rooms">10</integer>
     <integer name="api_results">10</integer>
     <integer name="api_max_results">100</integer>
-
+    <integer name="max_caregiver_slots_per_week">5</integer>
 </resources>
