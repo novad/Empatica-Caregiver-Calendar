@@ -54,6 +54,7 @@ public class AppointmentActivity extends AppCompatActivity implements Appointmen
     AppointmentViewModel mAppointmentViewModel;
 
     private boolean isCaregiverSelected = false;
+    private boolean passAllConfictChecks = true;
 
     private Date mDate;
 
@@ -256,20 +257,30 @@ public class AppointmentActivity extends AppCompatActivity implements Appointmen
      */
     @Override
     public void conflictResultCallback(Appointment newAppointment, AppointmentViewModel.CONFLICT_CODES code) {
+
         if (code == AppointmentViewModel.CONFLICT_CODES.NONE) {
-            mAppointmentViewModel.caregiversByHourData.removeObservers(this);
-            if (mUpdate) {
-                newAppointment.appointmentId = mAppointmentViewModel.editingAppointmentId;
-                mAppointmentViewModel.update(newAppointment);
-            } else {
-                mAppointmentViewModel.add(newAppointment);
+            //Two checks have to be passed, hour and weekly conflicts or caregivers
+            if(mAppointmentViewModel.allChecksPassed()) {
+                if (mUpdate) {
+                    newAppointment.appointmentId = mAppointmentViewModel.editingAppointmentId;
+                    mAppointmentViewModel.update(newAppointment);
+                } else {
+                    mAppointmentViewModel.add(newAppointment);
+                }
+
+                mAppointmentViewModel.caregiversByHourData.removeObservers(this);
+                mAppointmentViewModel.caregiversByWeek.removeObservers(this);
+                finish();
             }
-            finish();
         } else {
             mSaveButton.setEnabled(true);
             if (code == AppointmentViewModel.CONFLICT_CODES.CAREGIVER_BUSY) {
                 mCarerLastNameTextView.requestFocus();
                 mCarerLastNameTextView.setError(getString(R.string.error_busy_caregiver));
+            }
+            if(code == AppointmentViewModel.CONFLICT_CODES.CAREGIVER_BUSY_MAX_SLOTS){
+                mCarerLastNameTextView.requestFocus();
+                mCarerLastNameTextView.setError(getString(R.string.error_caregiver_max_slots_week));
             }
         }
     }
