@@ -14,7 +14,6 @@ import nova.daniel.empatica.Utils;
 /**
  * Class that represents an appointment. Consisting of a patient name, room number, date, and
  * reference to the caregiver.
- * <p>
  * Marked as entity to be used directly with Room persistence library.
  */
 @Entity
@@ -71,8 +70,4 @@ public class Appointment {
         return cal.get(Calendar.YEAR);
     }
 
-    @Ignore
-    public Caregiver getCaregiver() {
-        return mCaregiver;
-    }
 }
