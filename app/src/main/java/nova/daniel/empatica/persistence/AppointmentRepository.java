@@ -64,7 +64,7 @@ public class AppointmentRepository {
      * @param date Date of the appointments to query
      * @return List of rooms for the given date
      */
-    public LiveData<List<Integer>> getAppointmentsOfHourForDate(Date date) {
+    public LiveData<List<Integer>> getUsedRoomsForDateHour(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
         cal.set(Calendar.MINUTE, 0);
@@ -75,6 +75,26 @@ public class AppointmentRepository {
 
         return mAppointmentDAO.getAppointmentRoomsByDate(start, end);
     }
+
+
+    /**
+     * Gets ids of caregivers associated with appointments scheduled for a specific hour of the day
+     *
+     * @param date Date of the appointments to query
+     * @return List of caregivers ids for the given date
+     */
+    public LiveData<List<String>> getCaregiversForDateHour(Date date, Appointment appointment) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.set(Calendar.MINUTE, 0);
+        long start = cal.getTime().getTime();
+
+        cal.set(Calendar.MINUTE, 59);
+        long end = cal.getTime().getTime();
+
+        return mAppointmentDAO.getCaregiversByDate(start, end, new int[]{appointment.appointmentId});
+    }
+
 
     public void insert(Appointment appointment) {
         new AppointmentRepository.insertAsyncTask(mAppointmentDAO).execute(appointment);
