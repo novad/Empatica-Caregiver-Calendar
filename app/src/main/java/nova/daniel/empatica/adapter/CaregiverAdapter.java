@@ -22,7 +22,14 @@ import nova.daniel.empatica.model.Caregiver;
 
 /**
  * Adapter for the RecyclerView that displays a list of caregivers.
- * Name and profile picture are displayed in each view.
+ * Name and profile picture of a {@link Caregiver} are displayed in each view holder.
+ * Pictures display and management is handled through the Glide image loading library.
+ * When a view holder is clicked, the selected caregiver is sent to the caller through the
+ * caregiverSelectedListener callback.
+ *
+ * <p/>
+ * Rendered in the {@link nova.daniel.empatica.ui.CaregiversActivity} activity,
+ * when the user selects a caregiver form a list.
  */
 @SuppressWarnings("unchecked")
 public class CaregiverAdapter extends RecyclerView.Adapter<CaregiverAdapter.ViewHolder> {
