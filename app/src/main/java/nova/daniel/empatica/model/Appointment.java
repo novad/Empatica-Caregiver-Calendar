@@ -5,6 +5,7 @@ import androidx.room.Embedded;
 import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
+import androidx.room.RoomWarnings;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -16,6 +17,7 @@ import nova.daniel.empatica.Utils;
  * reference to the caregiver.
  * Marked as entity to be used directly with Room persistence library.
  */
+@SuppressWarnings(RoomWarnings.PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED)
 @Entity
 public class Appointment {
 
@@ -35,7 +37,6 @@ public class Appointment {
 
     @Ignore
     public Appointment(Date date, Caregiver caregiver, String patientName, int room) {
-
         this.mDate = Utils.removeMinutesSecondsAndMillis(date);
         this.mCaregiver = caregiver;
         this.mPatientName = patientName;
