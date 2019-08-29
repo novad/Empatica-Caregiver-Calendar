@@ -4,7 +4,7 @@ import com.bumptech.glide.annotation.GlideModule;
 import com.bumptech.glide.module.AppGlideModule;
 
 /**
- * Required module to use the Glide library.
+ * Required module to use the Glide image loading library.
  * See https://bumptech.github.io/glide/
  */
 @GlideModule

@@ -8,11 +8,11 @@ import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
-import nova.daniel.empatica.R;
 import nova.daniel.empatica.persistence.CaregiverRepository;
 
 /**
  * Singleton class to retrieve caregivers data from randomuser.me API.
+ * Calls are made using the Volley HTTP library.
  */
 @SuppressLint("StaticFieldLeak")
 public class CaregiversApi {
@@ -55,11 +55,11 @@ public class CaregiversApi {
      * @param page             Page number to fetch.
      * @param callbackListener Result listener.
      */
-    public static void fetchCaregivers(int page, CaregiverRepository.APICallbackListener callbackListener){
+    public static void fetchCaregivers(int page, int results, CaregiverRepository.APICallbackListener callbackListener) {
         RequestQueue queue = Volley.newRequestQueue(mContext);
 
         // Build complete URL, the default number of results is set in api_results in the integer resources.
-        String url = buildURL(page, mContext.getResources().getInteger(R.integer.api_results));
+        String url = buildURL(page, results);
 
         // Build json request
         JsonObjectRequest caregiverJsonRequest = new JsonObjectRequest
