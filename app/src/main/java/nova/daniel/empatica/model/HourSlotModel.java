@@ -3,16 +3,20 @@ package nova.daniel.empatica.model;
 import java.util.List;
 
 /**
- * Represents the number of appointments for a given hour.
+ * Represents the associated appointments for a given hour.
  */
 public class HourSlotModel {
 
     private String mHourLabel;  // Hour label
     private List<Appointment> mAppointmentsList;  // List of appointments for the set mDate
 
-    HourSlotModel(String hourLabel, List<Appointment> slots) {
+    /**
+     * @param hourLabel    Hour label for the slot, e.g "9:00"
+     * @param appointments List of appointments
+     */
+    HourSlotModel(String hourLabel, List<Appointment> appointments) {
         this.mHourLabel = hourLabel;
-        mAppointmentsList = slots;
+        mAppointmentsList = appointments;
     }
 
     public String getHourLabel() {
