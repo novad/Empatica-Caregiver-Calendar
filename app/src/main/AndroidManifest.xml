@@ -14,6 +14,10 @@
         android:theme="@style/AppTheme"
         tools:ignore="AllowBackup,GoogleAppIndexingWarning">
 
+        <uses-library
+            android:name="android.test.runner"
+            android:required="false" />
+
         <activity
             android:name=".ui.MainActivity"
             android:label="@string/title_activity_main"
