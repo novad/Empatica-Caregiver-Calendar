@@ -129,7 +129,7 @@ public class AutoFitOperationTask extends AsyncTask<Void, Void, Void> {
     protected void onPostExecute(Void aVoid) {
         super.onPostExecute(aVoid);
         if (mContext.get() != null) {
-            uiCallback.onFinishedAutoFit(Utils.getDayEnd(mDate).getTime());
+            uiCallback.onFinishedAutoFit();
         }
     }
 
@@ -216,6 +216,6 @@ public class AutoFitOperationTask extends AsyncTask<Void, Void, Void> {
 
     // Callback when the task is completed
     public interface AutoFitCallBack {
-        void onFinishedAutoFit(long date);
+        void onFinishedAutoFit();
     }
 }
