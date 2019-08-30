@@ -19,7 +19,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:textColor="@android:color/holo_blue_dark"
-        android:text="Add Slot"
+        android:text="@string/add_slot"
         android:textSize="18sp" />
 
     <androidx.cardview.widget.CardView
