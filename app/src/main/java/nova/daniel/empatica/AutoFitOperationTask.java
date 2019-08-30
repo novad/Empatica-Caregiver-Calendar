@@ -202,7 +202,7 @@ public class AutoFitOperationTask extends AsyncTask<Void, Void, Void> {
     /**
      * Creates a new Appointment object and sends it to the repository to be saved
      *
-     * @param caregiverID Id of che caregiver
+     * @param caregiverID Id of the caregiver
      * @param date        Date
      * @param room        Room number
      */
