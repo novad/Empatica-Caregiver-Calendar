@@ -188,7 +188,7 @@ public class AppointmentActivity extends AppCompatActivity implements Appointmen
         String[] ids = {caregiverId};
 
         // Set up view model for the selected caregiver and its respective views
-        mCaregiverViewModel.getCaregiverByID(ids).observe(this, caregivers -> {
+        mCaregiverViewModel.getByID(ids).observe(this, caregivers -> {
             if(caregivers != null && caregivers.size()>0) {
                 Caregiver caregiver = caregivers.get(0);
                 mAppointmentViewModel.newAppointmentCaregiver = caregiver;

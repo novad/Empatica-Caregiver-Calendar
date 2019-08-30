@@ -46,7 +46,7 @@ public class Hospital implements CaregiverRepository.FetchListener {
      */
     public void updateModelDate(Date newDate) {
         this.mCurrentDate = newDate;
-        mAppointmentLiveData = mAppointmentViewModel.getAppointmentsForDate(mCurrentDate);
+        mAppointmentLiveData = mAppointmentViewModel.getForDay(mCurrentDate);
         mAppointmentLiveData.observe((MainActivity) mContext, appointments -> {
             if (mAppointmentLiveData != null) {
                 initializeSlots(appointments);

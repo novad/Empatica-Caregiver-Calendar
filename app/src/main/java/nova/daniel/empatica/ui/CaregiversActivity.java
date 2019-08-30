@@ -55,7 +55,7 @@ public class CaregiversActivity extends AppCompatActivity implements CaregiverAd
 
         // Created ViewModel and update adapter in case of changes.
         mCaregiverViewModel = ViewModelProviders.of(this).get(CaregiverViewModel.class);
-        mCaregiverViewModel.getAllCaregivers().observe(this, caregiverEntities -> {
+        mCaregiverViewModel.getAll().observe(this, caregiverEntities -> {
             progressDialog.dismiss();
             mAdapter.setCaregiversList(caregiverEntities);
         });
