@@ -24,4 +24,9 @@
     <string name="error_no_caregiver_selected">Select a caregiver from the list</string>
     <string name="error_busy_caregiver">Caregiver is busy for the given date, please select another one.</string>
     <string name="error_caregiver_max_slots_week">Caregiver cannot be assigned more time-slots this week. Please select another one.</string>
+    <string name="error_caregivers">Caregivers cannot be fetched at this moment, please verify you have an active internet connection</string>
+    <string name="fittinINProgress">Auto-fitting caregivers for the day task in progress</string>
+    <string name="alert_nocaregivers">No more candidates are available</string>
+    <string name="add_slot">Add</string>
+    <string name="error_no_more_rooms">No more rooms are available for the selected hour</string>
 </resources>
