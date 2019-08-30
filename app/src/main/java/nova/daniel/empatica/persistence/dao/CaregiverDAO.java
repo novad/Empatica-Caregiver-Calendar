@@ -23,8 +23,14 @@ public interface CaregiverDAO {
     @Query("SELECT * FROM Caregiver")
     LiveData<List<Caregiver>> getAll();
 
+    @Query("SELECT COUNT(*) FROM Caregiver")
+    LiveData<Integer> countAll();
+
     @Query("SELECT uuid FROM Caregiver")
     LiveData<List<String>> getAllIds();
+
+    @Query("SELECT uuid FROM Caregiver")
+    List<String> getAllIdsSync();
 
     @Query("SELECT * FROM Caregiver WHERE uuid IN (:caregiverIds)")
     LiveData<List<Caregiver>> loadAllByIds(String[] caregiverIds);
@@ -57,7 +63,7 @@ public interface CaregiverDAO {
             "(SELECT appointment.uuid as app_uuid FROM appointment WHERE appointment.date BETWEEN :start AND :end ) " +
             "ON caregiver.uuid=app_uuid " +
             "GROUP BY caregiver.uuid " +
-            "ORDER BY COUNT(app_uuid)")
+            "ORDER BY COUNT(app_uuid)" +
+            "LIMIT 10")
     List<CountWork> getByAppointmentCountForDate(long start, long end);
-
 }
