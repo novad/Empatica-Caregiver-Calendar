@@ -166,12 +166,14 @@ public class CaregiverRepository {
                     e.printStackTrace();
                 }
                 if (mFetchListener != null)
-                    mFetchListener.onCompleted();
+                    mFetchListener.onCompleted(true);
             }
 
             @Override
             public void resultError() {
                 System.out.println("CaregiversRepository: Error loading caregivers form API, using local database");
+                if (mFetchListener != null)
+                    mFetchListener.onCompleted(false);
             }
         });
     }
@@ -193,7 +195,7 @@ public class CaregiverRepository {
      * Implemented in {@link nova.daniel.empatica.model.Hospital}
      */
     public interface FetchListener {
-        void onCompleted();
+        void onCompleted(boolean fetchSuccess);
     }
 
     /**
