@@ -2,50 +2,75 @@ package nova.daniel.empatica.model;
 
 import android.content.Context;
 
-import androidx.fragment.app.FragmentActivity;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModelProviders;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import nova.daniel.empatica.AutoFitOperationTask;
 import nova.daniel.empatica.R;
+import nova.daniel.empatica.persistence.CaregiverRepository;
+import nova.daniel.empatica.ui.MainActivity;
 import nova.daniel.empatica.viewmodel.AppointmentViewModel;
 
 /**
- * Represents the hospital, with a set of appointments for a specific date.
+ * Represents the hospital model, with a set of appointments for a specific date.
  */
-public class Hospital {
+public class Hospital implements CaregiverRepository.FetchListener {
+
     private Context mContext;
     private List<HourSlotModel> mHourSlotModelList; // Appointments by hour for the given date in mCurrentDate
     private Date mCurrentDate; // date of the model
-
-    private AppointmentViewModel mAppointmentViewModel; // Appointments ViewModel
-
-    private OnUpdateListener modelUpdateListener;
+    private LiveData<List<Appointment>> mAppointmentLiveData;
+    private AppointmentViewModel mAppointmentViewModel; // ViewModel of the Appointments
 
     public Hospital(Context context, Date date, OnUpdateListener modelUpdateListener) {
         mContext = context;
         mCurrentDate = date;
         this.modelUpdateListener = modelUpdateListener;
-        mAppointmentViewModel = ViewModelProviders.of((FragmentActivity) mContext).get(AppointmentViewModel.class);
+        mAppointmentViewModel = ViewModelProviders.of((MainActivity) mContext).get(AppointmentViewModel.class);
+    }
+
+    private OnUpdateListener modelUpdateListener;
+
+    // Accessor
+    public List<HourSlotModel> getHourSlotModelArrayList() {
+        return mHourSlotModelList;
     }
 
     /**
      * Updates the mAppointmentViewModel for the given date, fetching the respective appointments form the database.
-     *
      * @param newDate New date of the model.
      */
     public void updateModelDate(Date newDate) {
         this.mCurrentDate = newDate;
-        mAppointmentViewModel.getAppointmentsForDate(mCurrentDate).observe((FragmentActivity) mContext, appointments -> {
-            initializeSlots(appointments);
-            modelUpdateListener.updateAdapter(mHourSlotModelList);
+        mAppointmentLiveData = mAppointmentViewModel.getAppointmentsForDate(mCurrentDate);
+        mAppointmentLiveData.observe((MainActivity) mContext, appointments -> {
+            if (mAppointmentLiveData != null) {
+                initializeSlots(appointments);
+                modelUpdateListener.updateAdapter(mHourSlotModelList);
+            }
         });
     }
 
-    public List<HourSlotModel> getHourSlotModelArrayList() {
-        return mHourSlotModelList;
+    /**
+     * Entry point to the auto-fit caregivers functions.
+     * <p>
+     * Before the fitting process, the complete list of caregivers must be fetched,
+     * so a {@link CaregiverRepository} instance is created.
+     * The repository is initialized with a callback {@link CaregiverRepository.FetchListener},
+     * so when all ca
+     *
+     * @param date Date
+     */
+    public void autoFitCaregiver(Date date) {
+        this.mCurrentDate = date;
+        mAppointmentLiveData.removeObservers((MainActivity) mContext);
+        mAppointmentLiveData = null;
+        CaregiverRepository repository = new CaregiverRepository(mContext, false);
+        repository.fetchAllCaregivers(this);
     }
 
     /**
@@ -98,10 +123,22 @@ public class Hospital {
         return true;
     }
 
+    ///// Auto fit caregivers functionality functions /////
+
+    /**
+     * Callback from the fetchAllCaregivers function form {@link CaregiverRepository}.
+     * It instantiates and run the task {@link AutoFitOperationTask}.
+     */
+    @Override
+    public void onCompleted() {
+        new AutoFitOperationTask(mContext, mCurrentDate).execute();
+    }
+
     /**
      * Interface to respond to updates in the list of {@link HourSlotModel}
      */
     public interface OnUpdateListener {
         void updateAdapter(List<HourSlotModel> model);
     }
+
 }
