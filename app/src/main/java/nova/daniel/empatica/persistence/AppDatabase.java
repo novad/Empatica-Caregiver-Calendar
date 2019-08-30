@@ -17,18 +17,16 @@ import nova.daniel.empatica.persistence.dao.AppointmentDAO;
 import nova.daniel.empatica.persistence.dao.CaregiverDAO;
 
 /**
- * Room class to persist {@link Appointment} and {@link Caregiver} objects.
+ * Room class to persist {@link Appointment} and {@link Caregiver} objects into a database.
  */
 @Database(entities = {Appointment.class, Caregiver.class}, version = 1,
         exportSchema = false)
-@TypeConverters({Converters.class})
+@TypeConverters({Converters.class}) // Converted for the Date attributes
 public abstract class AppDatabase extends RoomDatabase {
 
     private static AppDatabase INSTANCE;
-
     // DAOs
     public abstract AppointmentDAO appointmentDAO();
-
     public abstract CaregiverDAO caregiverDAO();
 
     static AppDatabase getInMemoryDatabase(Context context) {
@@ -52,28 +50,32 @@ public abstract class AppDatabase extends RoomDatabase {
     }
 
     private static AppDatabase.Callback dbCallback = new RoomDatabase.Callback(){
+
         @Override
         public void onCreate(@NonNull SupportSQLiteDatabase db) {
             super.onCreate(db);
-            new PopulateDbAsync(INSTANCE).execute();
+        }
+
+        @Override
+        public void onOpen(@NonNull SupportSQLiteDatabase db) {
+            super.onOpen(db);
         }
     };
 
-    /**
-     * Method to populate the database
-     */
     private static class PopulateDbAsync extends AsyncTask<Void, Void, Void> {
 
         private final CaregiverDAO mDao;
+        private final AppointmentDAO mAppointmentDAO;
 
         PopulateDbAsync(AppDatabase db) {
             mDao = db.caregiverDAO();
+            mAppointmentDAO = db.appointmentDAO();
         }
 
         @Override
         protected Void doInBackground(final Void... params) {
-            //TODO
-            mDao.deleteAll();
+//            mDao.deleteAll();
+//            mAppointmentDAO.deleteAll();
             return null;
         }
     }
