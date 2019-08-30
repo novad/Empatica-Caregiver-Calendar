@@ -10,20 +10,13 @@
     android:orientation="vertical"
     tools:showIn="@layout/activity_main">
 
-    <TextView
-        android:id="@+id/month"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/month"
-        android:gravity="center_horizontal"
-        />
-
-    <com.view.calender.horizontal.umar.horizontalcalendarview.HorizontalCalendarView
+    <devs.mulham.horizontalcalendar.HorizontalCalendarView
         android:id="@+id/horizontalcalendarview"
         android:layout_width="match_parent"
-        android:layout_height="80dp"
-        >
-    </com.view.calender.horizontal.umar.horizontalcalendarview.HorizontalCalendarView>
+        android:layout_height="wrap_content"
+        android:background="@color/colorPrimary"
+        app:selectorColor="@android:color/transparent"
+        app:textColorSelected="#FFFF" />
 
     <LinearLayout
         android:id="@+id/linearLayout"
