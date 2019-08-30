@@ -30,6 +30,9 @@ import nova.daniel.empatica.model.HourSlotModel;
  *
  * Displays a date picker, and a list of 1-hour time-slots for the selected date,
  * each with the caregivers assigned for each room in the hospital.
+ *
+ * From this activity a user can add or edit appointments for the selected date.
+ * The user can aslo start the caregivers auto-fit async task process for the current day.
  */
 @SuppressWarnings("deprecation")
 public class MainActivity extends AppCompatActivity
@@ -79,6 +82,11 @@ public class MainActivity extends AppCompatActivity
         mCalendarView.setCalendarListener(new HorizontalCalendarListener() {
             @Override
             public void onDateSelected(Calendar date, int position) {
+                Calendar endDate = Calendar.getInstance();
+                endDate.setTime(mSelectedDate);
+                endDate.add(Calendar.MONTH, 1);
+                mCalendarView.setRange(startDate, endDate);
+
                 MainActivity.this.onDateSelected(date);
             }
         });
@@ -117,21 +125,10 @@ public class MainActivity extends AppCompatActivity
 
     /// Listeners ///
 
-    /**
-     * Responds to clicks of the fab to start the auto-fit task.
-     * @param view Calling view
-     */
-    public void onClickAutoFit(View view) {
-        mProgressDialog.setMessage(getString(R.string.fittinINProgress));
-        mProgressDialog.setCanceledOnTouchOutside(false);
-        mProgressDialog.setCancelable(false);
-        mProgressDialog.show();
-        mHospitalModel.autoFitCaregiver(mSelectedDate);
-    }
 
     /**
-     * Listener to the creation of a new Appointment for the given hour of the day.
      * Starts a {@link AppointmentActivity}.
+     * Listener to the creation of a new Appointment for the given hour of the day.
      *
      * @param hour Hour of the day
      */
@@ -163,6 +160,19 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
+     * Responds to clicks of the fab to start the auto-fit task.
+     *
+     * @param view Calling view
+     */
+    public void onClickAutoFit(View view) {
+        mProgressDialog.setMessage(getString(R.string.fittinINProgress));
+        mProgressDialog.setCanceledOnTouchOutside(false);
+        mProgressDialog.setCancelable(false);
+        mProgressDialog.show();
+        mHospitalModel.autoFitCaregiver(mSelectedDate);
+    }
+
+    /**
      * Implemented interface to update the adapters of the recycler views.
      * @param model New model
      */
@@ -172,39 +182,12 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
-     * Callback after the called {@link AppointmentActivity} activity has been closed.
-     * Gets called when done adding an appointment, or the user hits back.
-     * TODO: check calendar jumps
-     * @param requestCode Request code RESULT_OK if a response is returned
-     * @param resultCode Result code
-     * @param intent Intent containing the date of the new/edited slot.
-     */
-    protected void onActivityResult(int requestCode, int resultCode, Intent intent){
-        if(resultCode == RESULT_OK){
-            if (intent != null) {
-//                Date date = new Date(intent.getLongExtra(AppointmentActivity.SLOT_DATE, mSelectedDate.getTime()));
-//                mHospitalModel.updateModelDate(date);
-//
-//                setCurrentDayModel(mSelectedDate);
-//                newDateSelected(mCurrentDayModel);
-            }
-        }
-    }
-
-    /**
      * Callback when the {@link AutoFitOperationTask} finishes executing.
      * Dismisses the progress dialog.
-     *
-     * @param date
      */
     @Override
-    public void onFinishedAutoFit(long date) {
+    public void onFinishedAutoFit() {
         mProgressDialog.dismiss();
-//        mHospitalModel.updateModelDate(mSelectedDate);
-
-//        mSelectedDate = new Date(date);
-//        setCurrentDayModel(mSelectedDate);
-//        newDateSelected(mCurrentDayModel);
-//        mHospitalModel.updateModelDate(mSelectedDate);
+        mHospitalModel.updateModelDate(mSelectedDate);
     }
 }
