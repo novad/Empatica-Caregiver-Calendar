@@ -52,6 +52,8 @@ The application is divided into 6 main packages:
 * `persistence`. Contains classes that define the database and the repositories and DAOs for the appointments/caregivers objects.
 * `api`. Contains the classes that handle the API calls to `randomuser.me` to fetch the list of caregivers.
 
+The application is designed using a MVVM pattern, where the activity fetches view data from the viewmodels, which in turn obtain them from the models obtained by a repository. The repository in this case handles the managament of a database containing tables for both appointments and caregivers.
+
 
 The final application consists of three main activities which are found under folder `app/src/main/<package_name>/ui`:
 * `MainActivity.java`. The main activity that displays a calendar view to select a date, and a list of 1-hour time-slots indicating the hours of the day. The time-slots indicate the caregivers assigned to different rooms for the selected date and hour. A user can also add/edit information by tapping on the time-slots.
@@ -71,7 +73,7 @@ The algorithm works as follows:
 2. For each time-slot of the work day (9:00 to 17:00):
     * Get the list of available rooms for that time-slot
     * For each available room (maximum 10):
-        * Create a list of caregivers candidates with scores initialized to 0.
+        * Create a list of caregivers candidates with scores initialised to 0.
         * Remove all caregivers already working at that hour in the current day
         * Get the list of the caregivers from the repository that have worked the least amount of hours for the last 4 weeks.
         * For each candidate:
@@ -81,3 +83,12 @@ The algorithm works as follows:
                * If the candidate has appointments for the current day, add a score based on the proximity of the closest room. The score is computed as 2/distance, so a maximum score of 2 can be added.
                * If the candidate is in the list of caregivers with least hours, add a score of 3.
         * The candidate with the highest score is added to the current time-slot and room, a new appointment is created and saved in the repository. If more than one candidate have the same score, the first in the list is chosen.
+
+
+_________
+## Development Notes:
+* Finding an existing calendar view implementation was more time-demanding than expected. As a significant amount of libraries were buggy or poorly implemented. Implementing a custom-made view could have been a more effective solution.
+* The auto-fit features follows a greedy approach, looking for local optimal, so the results are not guaranteed to be optimal. Additionally, considering smaller subsets of candidate caregivers could significantly speed-up the execution time.
+    * The approach followed by the auto-fit task requires that every database query or insert is done synchronously to guarantee data consistency during the evaluation process, this meant that some queries had to be replicated in the repository/DAOs to allow for synchronous calls for the autofit task and the traditional asynchronous calls for rendering the views. Meaning there are some code redundancy in the repositories.
+* In order to load the least possible amount of caregivers/appointments data from the database into main memory, the application performs several atomic calls to check for number of rooms available, number of worked hours, etc. The issue with this approach is that the Room persistence library runs queries asynchronously by default. This behaviour means that during the checks for appointment work-hours conflicts, the application has to do several asynchronous calls to check for possible conflicts, leading to several callbacks to handle. An alternative approach is to perform the conflict checks in a single separate thread/task that  performs the database queries synchronously.
+* A complete set of automated tests could always be added to include a wider range of cases given additional time.
