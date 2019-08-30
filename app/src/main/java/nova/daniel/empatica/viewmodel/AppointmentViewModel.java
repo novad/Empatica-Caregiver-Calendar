@@ -8,14 +8,11 @@ import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LiveData;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import nova.daniel.empatica.R;
+import nova.daniel.empatica.Utils;
 import nova.daniel.empatica.model.Appointment;
 import nova.daniel.empatica.model.Caregiver;
 import nova.daniel.empatica.persistence.AppointmentRepository;
@@ -25,74 +22,46 @@ import nova.daniel.empatica.persistence.AppointmentRepository;
  */
 public class AppointmentViewModel extends AndroidViewModel {
 
-    public enum CONFLICT_CODES {
-        CAREGIVER_BUSY,    // Caregiver busy
-        CAREGIVER_BUSY_MAX_SLOTS,    // Caregiver busy
-        ROOM_UNAVAILABLE,  // Room not available
-        NONE              // No conflict found
-    }
-
-    private AppointmentRepository mRepository;
-    private LiveData<List<Appointment>> mAppointments; //data set
-    private LiveData<List<Integer>> mSpinnerData;
-    public LiveData<List<String>> caregiversByHourData;
-    public LiveData<Integer> caregiversByWeek;
-    public Caregiver newAppointmentCaregiver;
-    // Update params
-    public int editingAppointmentId = -1;
-    public int currentRoomNumber;
-
+    private static final int CHECKS_THRESHOLD = 2;
+    public int editingAppointmentId = -1;     // Update params, -1 if no update is done
     // Number of checks performed before an appointment can be added
     // One check for hourly caregiver conflicts, and one for weekly conflicts.
     private List<CONFLICT_CODES> mChecks;
-    public static final int CHECKS_THRESHOLD = 2;
+
+    private AppointmentRepository mRepository;
+    private LiveData<List<Appointment>> mAppointments; //data set
+    public LiveData<List<String>> caregiversByHourData;
+    public LiveData<Integer> caregiversByWeek;
+    public Caregiver newAppointmentCaregiver;
+    /**
+     * Callback listener for the conflict analysis results
+     **/
+    private AppointmentModelCallback modelCallback;
+    public int currentRoomNumber;
+
 
     public interface AppointmentModelCallback {
         void conflictResultCallback(Appointment appointment, CONFLICT_CODES errorCode);
     }
 
-    private AppointmentModelCallback modelCallback;
+    /**
+     * Fetch all appointments.
+     *
+     * @return Returns all appointments from the repository.
+     */
+    public LiveData<List<Appointment>> getAll() {
+        mAppointments = mRepository.getAll();
+        return mAppointments;
+    }
 
     /**
      * Constructor, initializes the {@link AppointmentRepository} instance.
-     *
      * @param application Application context
      */
     public AppointmentViewModel(@NonNull Application application){
         super(application);
         mRepository = new AppointmentRepository(application);
     }
-
-    /**
-     * Fetch all appointments.
-     * @return Returns all appointments from the repository.
-     */
-    public LiveData<List<Appointment>> getAllAppointments(){
-        mAppointments = mRepository.getAllAppointments();
-        return mAppointments;
-    }
-
-    /**
-     * Returns all appointments for the day given in the date parameter from the repository.
-     * @param date Date of the day to query
-     * @return Appointments for the given day.
-     */
-    public LiveData<List<Appointment>> getAppointmentsForDate(Date date) {
-        mAppointments = mRepository.getAppointmentsForDate(date);
-        return mAppointments;
-    }
-
-    /**
-     * Returns all appointments for a set of Ids from the repository.
-     *
-     * @param ids IDs to query.
-     * @return List of appointments for the given ids.
-     */
-    public LiveData<List<Appointment>> getAppointmentsForID(int[] ids) {
-        mAppointments = mRepository.getAppointmentsById(ids);
-        return mAppointments;
-    }
-
     /**
      * Adds an appointment to the repository.
      * @param appointment Appointment to add.
@@ -104,7 +73,6 @@ public class AppointmentViewModel extends AndroidViewModel {
     /**
      * Updates an appointment in the repository.
      * Updates by ID.
-     *
      * @param appointment Appointment to update.
      */
     public void update(Appointment appointment) {
@@ -122,102 +90,128 @@ public class AppointmentViewModel extends AndroidViewModel {
         mRepository.deleteById(id);
     }
 
-    // Methods for checking constraints
+    /**
+     * Returns all appointments (between 0:00 - 23:59) for the day given in the date parameter from the repository.
+     *
+     * @param date Date of the day to query
+     * @return Appointments for the given day.
+     */
+    public LiveData<List<Appointment>> getForDay(Date date) {
+        long start = Utils.getDayStart(date).getTime();
+        long end = Utils.getDayEnd(date).getTime();
 
+        mAppointments = mRepository.getForDate(start, end);
+        return mAppointments;
+    }
+
+    /**
+     * Fetches the rooms used for the given date.
+     *
+     * @param date Appointment query date.
+     * @return Live data of the list of rooms used in the given date.
+     */
+    public LiveData<List<Integer>> getTakenRooms(Date date) {
+        long start = Utils.removeMinutesSecondsAndMillis(date).getTime(); // set minute to 0 for the current hour
+        long end = Utils.getHourEnd(date).getTime();
+
+        return mRepository.getUsedRoomsForTimeRange(start, end);
+    }
+
+    /**
+     * Returns all appointments for a set of Ids from the repository.
+     *
+     * @param ids IDs to query.
+     * @return List of appointments for the given ids.
+     */
+    public LiveData<List<Appointment>> getAppointmentsForID(int[] ids) {
+        mAppointments = mRepository.getByID(ids);
+        return mAppointments;
+    }
+
+    /**
+     * Checks for possible conflicts of a new or edited appointment. Possible conflicts are identified by a {@link CONFLICT_CODES} code;
+     * possible conflicts include:
+     *  - CAREGIVER_BUSY: caregiver is already working at the current hour of the day.
+     *  - CAREGIVER_BUSY_MAX_SLOTS: caregiver has exceeded the maximum number of allowed work hours for the current week. Default set to 5, see the integers resource max_caregiver_slots_per_week
+     *
+     * Once the conflict checks are carried out, the modelCallback.conflictResultCallback method is called, specifying any potential conflict.
+     *
+     * @param appointment Target appointment
+     * @param owner Owner for the asynchronous results form the repository, generally the {@link nova.daniel.empatica.ui.AppointmentActivity} instance.
+     */
     public void checkCaregiverForConflict(Appointment appointment, LifecycleOwner owner) {
-
         mChecks = new ArrayList<>();
-
         modelCallback = (AppointmentModelCallback) owner;
+
+        // Check if the caregiver is already assigned during that time-slot
         caregiversByHourData = getCaregiversForHourDate(appointment.mDate, editingAppointmentId);
         caregiversByHourData.observe(owner, uuids -> {
+
             boolean caregiverBusy = uuids.contains(appointment.mCaregiver.uuid);
 
-            CONFLICT_CODES code = CONFLICT_CODES.NONE;
-
-            if (caregiverBusy)
-                code = CONFLICT_CODES.CAREGIVER_BUSY;
+            CONFLICT_CODES code = caregiverBusy ? CONFLICT_CODES.CAREGIVER_BUSY : CONFLICT_CODES.NONE;
 
             mChecks.add(code);
-
+            caregiversByHourData.removeObservers(owner);
             modelCallback.conflictResultCallback(appointment, code);
         });
 
+        // Check if the caregiver can work more hours that week
         caregiversByWeek = countCaregiversForWeek(appointment.mDate, appointment.mCaregiver.uuid);
         caregiversByWeek.observe(owner, count -> {
 
             int max_slots = getApplication().getResources().getInteger(R.integer.max_caregiver_slots_per_week);
 
-            CONFLICT_CODES code;
+            CONFLICT_CODES code = count >= max_slots ? CONFLICT_CODES.CAREGIVER_BUSY_MAX_SLOTS : CONFLICT_CODES.NONE;
 
-            if(count >= max_slots) {
-                code = CONFLICT_CODES.CAREGIVER_BUSY_MAX_SLOTS;
-            }else {
-                code = CONFLICT_CODES.NONE;
-            }
             mChecks.add(code);
+            caregiversByWeek.removeObservers(owner);
             modelCallback.conflictResultCallback(appointment, code);
         });
     }
 
-    /**
-     * Fetches the rooms used for the given date.
-     * @param date Appointment query date.
-     * @return Live data of the list of rooms used in the given date.
-     */
-    public LiveData<List<Integer>> getTakenRooms(Date date) {
-        mSpinnerData = mRepository.getUsedRoomsForDateHour(date);
-        return mSpinnerData;
-    }
+    /// Methods for checking constraints ///
 
     /**
-     * Fetch caregivers ids for the selected date, excluding the given appointment
-     *
+     * Get caregivers ids that have associated appointments for the selected date, excluding the given appointment
      * @param date          Date
      * @param appointmentId Appointment id
      * @return List of caregivers uuids.
      */
-    public LiveData<List<String>> getCaregiversForHourDate(Date date, int appointmentId) {
-        return mRepository.getCaregiversForDateHour(date, appointmentId);
+    private LiveData<List<String>> getCaregiversForHourDate(Date date, int appointmentId) {
+        return mRepository.getCaregiversForHour(date, appointmentId);
     }
 
-    public LiveData<Integer> countCaregiversForWeek(Date date, String caregiverID) {
+    /**
+     * Counts how many appointments the given caregiver has for the week
+     *
+     * @param date        Target date of the week
+     * @param caregiverID Caregiver ID
+     * @return Count of caregivers for the week
+     */
+    private LiveData<Integer> countCaregiversForWeek(Date date, String caregiverID) {
         return mRepository.countCaregiverSlotsForWeek(date, caregiverID);
     }
 
-    // Non repository based
-
     /**
-     * Returns a list containing consecutive integers until the value set in num_rooms in the
-     * integers resources file.
-     *
-     * @return List of integers from 1 up to num_rooms
+     * Checks if there are any unresolved conflicts in the mChecks list
+     * @return True if no conflicts exist, false if there is at least one conflict code in mChecks.
      */
-    private List<Integer> getAllRoomsList(){
-        int maxRooms = getApplication().getResources().getInteger(R.integer.num_rooms);
-        return IntStream.rangeClosed(1, maxRooms).boxed().collect(Collectors.toList());
-    }
-
-    /**
-     * Finds the available rooms finding the difference between all rooms and the taken ones.
-     * A current room is added to ensure that the appointment being edited (if applicable) is excluded from the list to avoid conflicts.
-     * @param takenRooms List of taken rooms
-     * @param currentRoom Room of the appointment being edited.
-     * @return List of available room numbers
-     */
-    public List<Integer> getAvailableRooms(List<Integer> takenRooms, int currentRoom) {
-        Collection totalRooms = getAllRoomsList();
-        totalRooms.removeAll(takenRooms);
-        List<Integer> rooms = new ArrayList<Integer>(totalRooms);
-        if(currentRoom!=0) rooms.add(currentRoom);
-        Collections.sort(rooms);
-        return rooms;
-    }
-
     public boolean allChecksPassed(){
         boolean anyChecks = !mChecks.contains(CONFLICT_CODES.CAREGIVER_BUSY) && !mChecks.contains(CONFLICT_CODES.CAREGIVER_BUSY_MAX_SLOTS)
                 && !mChecks.contains(CONFLICT_CODES.ROOM_UNAVAILABLE);
 
         return mChecks.size() >= CHECKS_THRESHOLD && anyChecks;
+    }
+
+
+    /// END Methods for checking constraints ///
+
+    // Codes used for specifying the possible conflicts when trying to add/edit an appointment.
+    public enum CONFLICT_CODES {
+        CAREGIVER_BUSY,    // Caregiver busy
+        CAREGIVER_BUSY_MAX_SLOTS,    // Caregiver busy
+        ROOM_UNAVAILABLE,  // Room not available
+        NONE              // No conflict found
     }
 }
