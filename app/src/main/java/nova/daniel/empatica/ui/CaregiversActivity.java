@@ -19,7 +19,9 @@ import nova.daniel.empatica.viewmodel.CaregiverViewModel;
 /**
  * Activity that displays the list of caregivers.
  * The list is populated by using the {@link CaregiverViewModel} instance.
- * A caregiver can be tapped to be selected, and its respective ID is returned in the result intent.
+ * A caregiver can be tapped to be selected, and its respective ID is returned in the result intent to the calling activity.
+ *
+ * The list of caregivers can also be sorted by their last name by tapping the fab.
  */
 @SuppressWarnings("deprecation")
 public class CaregiversActivity extends AppCompatActivity implements CaregiverAdapter.onItemClickListener {
@@ -41,10 +43,9 @@ public class CaregiversActivity extends AppCompatActivity implements CaregiverAd
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_caregivers);
 
-        // Show loading dialog
-        progressDialog = new ProgressDialog(CaregiversActivity.this);
-        progressDialog.setMessage(getString(R.string.loading));
-        progressDialog.show();
+        // Show loading dialogs
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setCancelable(false);
 
         // Set up recycler view
         mRecyclerView = findViewById(R.id.caregivers_recyclerView);
@@ -55,14 +56,18 @@ public class CaregiversActivity extends AppCompatActivity implements CaregiverAd
         // Created ViewModel and update adapter in case of changes.
         mCaregiverViewModel = ViewModelProviders.of(this).get(CaregiverViewModel.class);
         mCaregiverViewModel.getAllCaregivers().observe(this, caregiverEntities -> {
-            if (caregiverEntities.size() == 0) {
-                Toast.makeText(this, getString(R.string.toast_no_available_caregivers), Toast.LENGTH_LONG).show();
-                finish();
-
-            }
             progressDialog.dismiss();
             mAdapter.setCaregiversList(caregiverEntities);
         });
+    }
+
+    @Override
+    protected void onStart() {
+        // Show a progress dialog until the fetch is complete
+        super.onStart();
+        progressDialog.setMessage(getString(R.string.loading));
+        progressDialog.setCancelable(false);
+        progressDialog.show();
     }
 
     /**
@@ -93,7 +98,6 @@ public class CaregiversActivity extends AppCompatActivity implements CaregiverAd
         Toast.makeText(this, getString(R.string.toast_sortingname), Toast.LENGTH_SHORT).show();
         mAdapter.doSort();
     }
-
 
     /**
      * Implementation of the listener when a single Caregiver is clicked.
