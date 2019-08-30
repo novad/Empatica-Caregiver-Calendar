@@ -132,9 +132,10 @@ public class Hospital implements CaregiverRepository.FetchListener {
     /**
      * Callback from the fetchAllCaregivers function form {@link CaregiverRepository}.
      * It instantiates and run the task {@link AutoFitOperationTask}.
+     * @param fetchSuccess True if the API calls were completed successfully. False occurs when the API could not be called, so only the local database of caregivers has to be used.
      */
     @Override
-    public void onCompleted() {
+    public void onCompleted(boolean fetchSuccess) {
         new AutoFitOperationTask(mContext, mCurrentDate).execute();
     }
 
